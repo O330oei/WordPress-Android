@@ -101,6 +101,7 @@ import org.wordpress.android.ui.LocaleAwareActivity;
 import org.wordpress.android.ui.PagePostCreationSourcesDetail;
 import org.wordpress.android.ui.RequestCodes;
 import org.wordpress.android.ui.Shortcut;
+import org.wordpress.android.ui.SuggestUsersActivity;
 import org.wordpress.android.ui.gif.GifPickerActivity;
 import org.wordpress.android.ui.history.HistoryListItem.Revision;
 import org.wordpress.android.ui.media.MediaBrowserActivity;
@@ -301,6 +302,8 @@ public class EditPostActivity extends LocaleAwareActivity implements
     private boolean mIsPage;
     private boolean mHasSetPostContent;
     private PostLoadingState mPostLoadingState = PostLoadingState.NONE;
+
+    @Nullable Consumer<String> mOnGetMentionResult;
 
     // For opening the context menu after permissions have been granted
     private View mMenuView = null;
@@ -2291,6 +2294,14 @@ public class EditPostActivity extends LocaleAwareActivity implements
                         }
                     }
                     break;
+                case RequestCodes.SELECTED_USER_MENTION:
+                    if (mOnGetMentionResult != null) {
+                        String selectedMention = data.getStringExtra(SuggestUsersActivity.SELECTED_USER_ID);
+                        mOnGetMentionResult.accept(selectedMention);
+                        // Clear the callback once we have gotten a result
+                        mOnGetMentionResult = null;
+                    }
+                    break;
             }
         }
     }
@@ -2739,6 +2750,11 @@ public class EditPostActivity extends LocaleAwareActivity implements
 
     @Override public void onGutenbergEditorSessionTemplatePreviewTracked(String template) {
         mPostEditorAnalyticsSession.previewTemplate(template);
+    }
+
+    @Override public void getMention(Consumer<String> onResult) {
+        mOnGetMentionResult = onResult;
+        ActivityLauncher.viewSuggestUsersForResult(this, mSite);
     }
 
     @Override
